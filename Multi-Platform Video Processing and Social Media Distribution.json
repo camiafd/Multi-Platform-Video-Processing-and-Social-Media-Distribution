@@ -1,0 +1,454 @@
+{
+  "name": "Multi-Platform Video Processing and Social Media Distribution",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1GgB2oix94mvQ9bQhd4LASKxUkxQ9QMjOxZX10EfTAnw",
+          "mode": "list",
+          "cachedResultName": "UGC Video Generation",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1GgB2oix94mvQ9bQhd4LASKxUkxQ9QMjOxZX10EfTAnw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "January",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1GgB2oix94mvQ9bQhd4LASKxUkxQ9QMjOxZX10EfTAnw/edit#gid=0"
+        },
+        "options": {
+          "columnsToWatch": [
+            "Edited Video Link"
+          ]
+        }
+      },
+      "id": "66289ffa-6028-4d2a-8788-3fffcaa6ed19",
+      "name": "New Video in Spreadsheet",
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        256,
+        592
+      ],
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "0Ik812wqEShIyjeu",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "videoUrl",
+              "value": "={{ $json.videoUrl }}",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "videoTitle",
+              "value": "={{ $json.videoTitle }}",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "videoDescription",
+              "value": "={{ $json.videoDescription }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c9a643d9-5c78-4c92-ae25-a77c1edb5bd7",
+      "name": "Workflow Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        480,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.videoUrl }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "video"
+            }
+          }
+        }
+      },
+      "id": "a58dc58a-94b8-455b-b8fe-e4cdbc45090b",
+      "name": "Download Video File",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        704,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "binaryPropertyName": "video",
+        "options": {}
+      },
+      "id": "91eb8761-d708-45ce-b5d6-250e6f0464cc",
+      "name": "Transcribe Video Audio",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        928,
+        592
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "1l0qsD0JpjciARDt",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Generate social media content for this video transcription:\n\n{{ $json.text }}\n\nCreate:\n1. A full caption (max 2200 characters) for Facebook/Instagram\n2. A short caption (max 280 characters) for Twitter\n3. 5-10 relevant hashtags",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a social media content expert. Analyze video transcriptions and generate engaging captions and hashtags optimized for multiple platforms (Facebook, Instagram, Twitter, YouTube). Create compelling, attention-grabbing content that drives engagement."
+        }
+      },
+      "id": "3a902143-a916-4e0b-b093-e6aca49e9a8b",
+      "name": "Generate Caption and Hashtags",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1184,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-nano",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-nano"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "d7160f9c-8084-40ae-91dd-b5a453ee5be6",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1152,
+        816
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "1l0qsD0JpjciARDt",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n\t\"type\": \"object\",\n\t\"properties\": {\n\t\t\"caption\": {\n\t\t\t\"type\": \"string\",\n\t\t\t\"description\": \"Engaging social media caption\"\n\t\t},\n\t\t\"shortCaption\": {\n\t\t\t\"type\": \"string\",\n\t\t\t\"description\": \"Shorter version for Twitter (max 280 chars)\"\n\t\t},\n\t\t\"hashtags\": {\n\t\t\t\"type\": \"array\",\n\t\t\t\"items\": {\n\t\t\t\t\"type\": \"string\"\n\t\t\t},\n\t\t\t\"description\": \"Array of relevant hashtags without # symbol\"\n\t\t}\n\t},\n\t\"required\": [\"caption\", \"shortCaption\", \"hashtags\"]\n}",
+        "autoFix": true
+      },
+      "id": "a82a78b9-11cf-4d41-8da4-d19144de83f7",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1280,
+        816
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "caption",
+              "value": "={{ $json.output.caption }}",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "shortCaption",
+              "value": "={{ $json.output.shortCaption }}",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "hashtags",
+              "value": "={{ $json.output.hashtags.map(tag => '#' + tag).join(' ') }}",
+              "type": "string"
+            },
+            {
+              "id": "id-4",
+              "name": "hashtagsArray",
+              "value": "={{ $json.output.hashtags }}",
+              "type": "array"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "cbf70ac8-e24a-4eed-afe3-4209f23264d5",
+      "name": "Prepare Social Media Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1648,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "hostUrl": "graph-video.facebook.com",
+        "httpRequestMethod": "POST",
+        "node": "me",
+        "edge": "videos",
+        "sendBinaryData": true,
+        "binaryPropertyName": "video",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "description",
+                "value": "={{ $json.output.caption + '\\n\\n' + $json.output.hashtags }}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "97f3566f-7460-4f20-93b1-88ac5c14858e",
+      "name": "Upload to Facebook",
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        1872,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "hostUrl": "graph-video.facebook.com",
+        "httpRequestMethod": "POST",
+        "node": "me",
+        "edge": "videos",
+        "sendBinaryData": true,
+        "binaryPropertyName": "video",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "description",
+                "value": "={{ $json.output.caption + '\\n\\n' + $json.output.hashtags }}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "3ececef6-08c1-4166-8c0b-5257bd690e6c",
+      "name": "Upload to Instagram",
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        1872,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.output.shortCaption + ' ' + $json.output.hashtags }}",
+        "additionalFields": {
+          "attachments": "={{ $binary.video.id }}"
+        }
+      },
+      "id": "4c9d5f6a-b3e2-4c80-9a0a-dc615aea9806",
+      "name": "Upload to Twitter",
+      "type": "n8n-nodes-base.twitter",
+      "typeVersion": 2,
+      "position": [
+        1872,
+        688
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "operation": "upload",
+        "title": "={{ $json.videoTitle || 'Video Upload' }}",
+        "binaryProperty": "video",
+        "options": {
+          "description": "={{ $json.caption + '\\n\\n' + $json.hashtags }}",
+          "privacyStatus": "public",
+          "tags": "={{ $json.hashtagsArray }}"
+        }
+      },
+      "id": "447cbd33-3d28-48c1-86fd-c498a7aeb44c",
+      "name": "Upload to YouTube",
+      "type": "n8n-nodes-base.youTube",
+      "typeVersion": 1,
+      "position": [
+        1872,
+        880
+      ]
+    },
+    {
+      "parameters": {
+        "content": "How It Works\n Add a new row to your spreadsheet with the video URL\nThe workflow automatically triggers and processes the video\nAI generates platform-optimized captions (full captions for Facebook/Instagram, shorter for Twitter)\nVideo uploads to all four platforms happen in parallel for efficiency",
+        "height": 128,
+        "width": 480
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        512,
+        768
+      ],
+      "typeVersion": 1,
+      "id": "78c77ecb-abf7-4a48-bf52-53ba1af4601c",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "New Video in Spreadsheet": {
+      "main": [
+        [
+          {
+            "node": "Workflow Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Configuration": {
+      "main": [
+        [
+          {
+            "node": "Download Video File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Video File": {
+      "main": [
+        [
+          {
+            "node": "Transcribe Video Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe Video Audio": {
+      "main": [
+        [
+          {
+            "node": "Generate Caption and Hashtags",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Caption and Hashtags",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Generate Caption and Hashtags",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Caption and Hashtags": {
+      "main": [
+        [
+          {
+            "node": "Prepare Social Media Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Social Media Data": {
+      "main": [
+        [
+          {
+            "node": "Upload to Facebook",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Upload to Instagram",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Upload to Twitter",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Upload to YouTube",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "f95eb9bc-17cf-49fc-8864-56c7e21c2522",
+  "meta": {
+    "instanceId": "2f76a867d171d52b26685505d6c2c1854bfcff92613a6e325b89007663fbcff3"
+  },
+  "id": "oevI5a_21qCJkgvzv8QZJ",
+  "tags": []
+}
